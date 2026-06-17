@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Model V3 — Demo Interativa</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f8f9fb;--surface:#ffffff;--surface2:#f1f4f8;--surface3:#e8edf5;
+  --blue:#1a56db;--blue-lt:#e8f0fe;--blue-dk:#1240a0;
+  --purple:#534AB7;--purple-lt:#EEEDFE;--purple-dk:#3C3489;
+  --green:#0F6E56;--green-lt:#E1F5EE;--green-dk:#085041;
+  --amber:#BA7517;--amber-lt:#FAEEDA;--amber-dk:#633806;
+  --gray:#5F5E5A;--gray-lt:#F1EFE8;--gray-dk:#444441;
+  --red:#A32D2D;--red-lt:#FCEBEB;
+  --text:#1a1f2e;--text2:#4a5568;--text3:#9aa3b0;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 4px rgba(0,0,0,0.08);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.10);
+}
+body{font-family:'Segoe UI','Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+.header-left{display:flex;align-items:center;gap:12px;}
+.logo{width:36px;height:36px;background:linear-gradient(135deg,#1a56db,#534AB7);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:900;flex-shrink:0;}
+.header-title{font-size:16px;font-weight:700;color:var(--text);}
+.header-sub{font-size:12px;color:var(--text3);margin-top:1px;}
+.header-badge{font-size:11px;background:var(--blue-lt);color:var(--blue-dk);padding:4px 10px;border-radius:20px;font-weight:600;border:1px solid rgba(26,86,219,0.15);}
+.author a{color:var(--blue);text-decoration:none;font-weight:600;font-size:11px;}
+.author a:hover{text-decoration:underline;}
+.main{max-width:1100px;margin:0 auto;padding:24px 20px;display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;}
+.chat-panel{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+.chat-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.chat-header-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,0.2);}
+.chat-header-title{font-size:13px;font-weight:600;color:var(--text);}
+.chat-header-sub{font-size:11px;color:var(--text3);margin-left:auto;}
+.msgs{height:440px;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:var(--bg);}
+.msgs::-webkit-scrollbar{width:4px;}
+.msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.msg{display:flex;flex-direction:column;gap:4px;max-width:82%;}
+.msg.user{align-self:flex-end;align-items:flex-end;}
+.msg.ai{align-self:flex-start;align-items:flex-start;}
+.bubble{padding:11px 15px;border-radius:16px;font-size:14px;line-height:1.65;color:var(--text);}
+.msg.user .bubble{background:var(--blue);color:#fff;border-bottom-right-radius:4px;}
+.msg.ai .bubble{background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:4px;box-shadow:var(--shadow);}
+.msg-meta{display:flex;align-items:center;gap:6px;}
+.ts{font-size:10px;color:var(--text3);font-family:'Courier New',monospace;}
+.ts-label{font-size:10px;color:var(--text3);background:var(--surface3);padding:1px 6px;border-radius:4px;font-family:'Courier New',monospace;}
+.thinking{display:none;align-items:center;gap:8px;padding:12px 18px;font-size:13px;color:var(--text3);background:var(--bg);border-top:1px solid var(--border);}
+.thinking.show{display:flex;}
+.dots{display:flex;gap:4px;}
+.dots span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce 1s infinite;}
+.dots span:nth-child(2){animation-delay:.2s;}
+.dots span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.input-area{padding:14px 16px;border-top:1px solid var(--border);background:var(--surface);display:flex;gap:10px;align-items:center;}
+.input-area input{flex:1;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;transition:border-color .2s;}
+.input-area input:focus{border-color:var(--blue);}
+.input-area input::placeholder{color:var(--text3);}
+.btn-send{background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;}
+.btn-send:hover{background:var(--blue-dk);}
+.btn-send:disabled{opacity:.5;cursor:not-allowed;}
+.mlp-panel{display:flex;flex-direction:column;gap:14px;}
+.panel-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);padding-left:2px;}
+.sat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+.sat-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+.sat-title{font-size:12px;font-weight:600;color:var(--text2);}
+.sat-pct{font-size:20px;font-weight:700;color:var(--text);font-family:'Courier New',monospace;}
+.sat-bar-bg{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;}
+.sat-bar-fill{height:100%;border-radius:3px;transition:width .6s ease,background .4s;background:var(--blue);}
+.sat-bar-fill.warn{background:var(--amber);}
+.sat-bar-fill.danger{background:var(--red);}
+.sat-status{font-size:11px;color:var(--text3);margin-top:6px;}
+.mlp-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+.mlp-card-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:14px;}
+.cat{margin-bottom:14px;}
+.cat:last-child{margin-bottom:0;}
+.cat-head{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.cat-name{font-size:12px;font-weight:600;color:var(--text);}
+.cat-count{font-size:10px;padding:1px 7px;border-radius:10px;margin-left:auto;font-weight:700;}
+.cat-pessoa .cat-dot{background:var(--purple);}
+.cat-pessoa .cat-count{background:var(--purple-lt);color:var(--purple-dk);}
+.cat-projeto .cat-dot{background:var(--green);}
+.cat-projeto .cat-count{background:var(--green-lt);color:var(--green-dk);}
+.cat-ferramenta .cat-dot{background:var(--amber);}
+.cat-ferramenta .cat-count{background:var(--amber-lt);color:var(--amber-dk);}
+.cat-ruido .cat-dot{background:var(--gray);}
+.cat-ruido .cat-count{background:var(--gray-lt);color:var(--gray-dk);}
+.mem-item{font-size:11px;color:var(--text2);background:var(--surface2);border-left:2px solid var(--border2);border-radius:0 4px 4px 0;padding:4px 8px;margin-bottom:3px;font-family:'Courier New',monospace;line-height:1.5;animation:fadeIn .4s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+.mem-empty{font-size:11px;color:var(--text3);font-style:italic;padding:2px 4px;}
+.bypass-card{background:var(--green-lt);border:1px solid rgba(15,110,86,0.25);border-radius:var(--radius);padding:14px;display:none;box-shadow:var(--shadow);}
+.bypass-card.show{display:block;animation:fadeIn .5s ease;}
+.bypass-title{font-size:12px;font-weight:700;color:var(--green-dk);margin-bottom:8px;}
+.bypass-body{font-size:11px;color:var(--green-dk);line-height:1.6;margin-bottom:8px;}
+.aeil-block{font-family:'Courier New',monospace;font-size:10px;background:rgba(255,255,255,0.7);border:1px solid rgba(15,110,86,0.2);border-radius:6px;padding:8px 10px;color:var(--green-dk);line-height:1.8;white-space:pre;}
+.info-card{background:var(--blue-lt);border:1px solid rgba(26,86,219,0.15);border-radius:var(--radius);padding:14px;}
+.info-title{font-size:11px;font-weight:700;color:var(--blue-dk);margin-bottom:6px;}
+.info-item{font-size:11px;color:var(--blue-dk);line-height:1.7;display:flex;gap:6px;margin-bottom:2px;}
+.info-item::before{content:"→";flex-shrink:0;}
+@media(max-width:720px){.main{grid-template-columns:1fr;}.header-badge{display:none;}}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:var(--surface);border-radius:var(--radius);padding:28px;max-width:440px;width:100%;box-shadow:var(--shadow-md);}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:10px;}
+.modal p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px;}
+.modal input{width:100%;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;color:var(--text);}
+.modal input:focus{border-color:var(--blue);}
+.btn-primary{width:100%;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.btn-primary:hover{background:var(--blue-dk);}
+.modal-note{font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6;}
+.modal-note a{color:var(--blue);}
+</style>
+</head>
+<body>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2>🔑 API Key da Anthropic</h2>
+    <p>Esta demo usa a API da Anthropic diretamente no seu navegador. A chave fica <strong>apenas na memória da página</strong> — nunca é salva nem enviada a nenhum servidor externo. Some ao fechar a aba.</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." onkeydown="if(event.key==='Enter')salvarKey()" />
+    <button class="btn-primary" onclick="salvarKey()">Iniciar Demo →</button>
+    <p class="modal-note">Não tem uma API key? Crie gratuitamente em <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+  </div>
+</div>
+
+<header class="header">
+  <div class="header-left">
+    <div class="logo">M</div>
+    <div>
+      <div class="header-title">Memory Model V3</div>
+      <div class="header-sub">Demo Interativa — A. W. Staiger &amp; Anthropic (Claude) · Cosmópolis, Brasil 2026</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="header-badge">v3.0 · 2026</div>
+    <div class="author"><a href="https://github.com/anthonystaiger8-bit/memory-model" target="_blank">Ver repositório →</a></div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div class="chat-header-dot"></div>
+      <span class="chat-header-title">Chat com Claude — MLP ativo</span>
+      <span class="chat-header-sub" id="msgCount">0 mensagens</span>
+    </div>
+    <div class="msgs" id="msgs">
+      <div class="msg ai">
+        <div class="bubble">Olá! Sou o Claude com o <strong>Memory Model V3</strong> ativo.<br><br>Enquanto conversamos, observe o painel à direita — ele mostra em tempo real o que estou aprendendo sobre você, com <strong>timestamps por mensagem</strong> e <strong>hierarquia de importância</strong>: Pessoa → Projeto → Ferramenta → Ruído.<br><br>Me conta: qual é o seu nome e o que você está desenvolvendo?</div>
+        <div class="msg-meta"><span class="ts-label">timestamp</span><span class="ts" id="ts-init"></span></div>
+      </div>
+    </div>
+    <div class="thinking" id="thinking">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span>Claude está processando e atualizando o MLP...</span>
+    </div>
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Digite sua mensagem e pressione Enter..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)enviar()" />
+      <button class="btn-send" id="btnSend" onclick="enviar()">Enviar →</button>
+    </div>
+  </div>
+
+  <div class="mlp-panel">
+    <div class="panel-label">Memória de Longo Prazo</div>
+    <div class="sat-card">
+      <div class="sat-top">
+        <span class="sat-title">Saturação de contexto</span>
+        <span class="sat-pct" id="satPct">0%</span>
+      </div>
+      <div class="sat-bar-bg"><div class="sat-bar-fill" id="satBar" style="width:0%"></div></div>
+      <div class="sat-status" id="satStatus">Sessão iniciada — aguardando mensagens</div>
+    </div>
+    <div class="mlp-card">
+      <div class="mlp-card-title">🧠 MLP — Categorias</div>
+      <div class="cat cat-pessoa">
+        <div class="cat-head"><div class="cat-dot"></div><span class="cat-name">Pessoa</span><span class="cat-count" id="badge-pessoa">0</span></div>
+        <div id="mem-pessoa"><div class="mem-empty">aguardando dados...</div></div>
+      </div>
+      <div class="cat cat-projeto">
+        <div class="cat-head"><div class="cat-dot"></div><span class="cat-name">Projeto</span><span class="cat-count" id="badge-projeto">0</span></div>
+        <div id="mem-projeto"><div class="mem-empty">aguardando dados...</div></div>
+      </div>
+      <div class="cat cat-ferramenta">
+        <div class="cat-head"><div class="cat-dot"></div><span class="cat-name">Ferramenta</span><span class="cat-count" id="badge-ferramenta">0</span></div>
+        <div id="mem-ferramenta"><div class="mem-empty">aguardando dados...</div></div>
+      </div>
+      <div class="cat cat-ruido">
+        <div class="cat-head"><div class="cat-dot"></div><span class="cat-name">Ruído</span><span class="cat-count" id="badge-ruido">0</span></div>
+        <div id="mem-ruido"><div class="mem-empty">descartando...</div></div>
+      </div>
+    </div>
+    <div class="bypass-card" id="bypassCard">
+      <div class="bypass-title">⚡ Bypass invisível ativado</div>
+      <div class="bypass-body">Contexto atingiu 90%. Resumo AEIL gerado — nova sessão iniciada com contexto comprimido.</div>
+      <div class="aeil-block" id="aeilBlock"></div>
+    </div>
+    <div class="info-card">
+      <div class="info-title">Como funciona esta demo</div>
+      <div class="info-item">Cada mensagem recebe um timestamp oculto</div>
+      <div class="info-item">Claude extrai e classifica dados por hierarquia</div>
+      <div class="info-item">Barra sobe a cada troca — em 90% dispara o Bypass</div>
+      <div class="info-item">Bypass gera resumo AEIL comprimido (~10x)</div>
+    </div>
+  </div>
+</main>
+
+<script>
+const now=()=>new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const date=()=>new Date().toLocaleDateString('pt-BR');
+document.getElementById('ts-init').textContent=date()+' '+now();
+let apiKey='',saturacao=0,msgCount=0,sending=false;
+const mlp={pessoa:[],projeto:[],ferramenta:[],ruido:[]};
+let historico=[];
+const SYS=`Você é o Claude com Memory Model V3 ativo. Responda SEMPRE em português brasileiro, de forma natural e amigável.
+
+REGRA OBRIGATÓRIA: ao final de CADA resposta, adicione exatamente uma linha começando com MLPJSON: seguida de um objeto JSON com as chaves pessoa, projeto, ferramenta, ruido. Cada chave é um array de strings curtas com novos dados aprendidos nessa mensagem. Se não há dados novos para uma categoria, use [].
+
+Hierarquia:
+- pessoa: nome, apelido, idade, profissão, localização, valores
+- projeto: nome do app/sistema, objetivo, status, problema atual
+- ferramenta: linguagens, frameworks, bibliotecas, versões
+- ruido: detalhes cotidianos passageiros (não vale guardar)
+
+Exemplo: MLPJSON:{"pessoa":["nome: Maria","cidade: SP"],"projeto":["app: receitas"],"ferramenta":["React Native"],"ruido":[]}
+
+IMPORTANTE: nunca mencione o MLPJSON na conversa. É invisível para o usuário.`;
+
+function salvarKey(){
+  const k=document.getElementById('apiKeyInput').value.trim();
+  if(!k.startsWith('sk-ant')){alert('Chave inválida. Deve começar com sk-ant-...');return;}
+  apiKey=k;
+  document.getElementById('modalBg').style.display='none';
+  addMsg('ai','Perfeito! Conexão estabelecida. Pode começar a conversar — o MLP ao lado vai se preencher em tempo real!',now());
+}
+
+function addMsg(role,text,ts){
+  msgCount++;
+  document.getElementById('msgCount').textContent=msgCount+' mensagem'+(msgCount!==1?'s':'');
+  const msgs=document.getElementById('msgs');
+  const div=document.createElement('div');
+  div.className='msg '+role;
+  const safe=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  div.innerHTML=`<div class="bubble">${safe}</div><div class="msg-meta"><span class="ts-label">timestamp</span><span class="ts">${date()} ${ts}</span></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function atualizarMLP(dados){
+  ['pessoa','projeto','ferramenta','ruido'].forEach(cat=>{
+    if(dados[cat]&&Array.isArray(dados[cat])){
+      dados[cat].forEach(item=>{
+        const t=item.trim();
+        if(t&&!mlp[cat].some(x=>x.toLowerCase()===t.toLowerCase()))mlp[cat].push(t);
+      });
+    }
+  });
+  renderMLP();
+}
+
+function renderMLP(){
+  ['pessoa','projeto','ferramenta','ruido'].forEach(cat=>{
+    const el=document.getElementById('mem-'+cat);
+    document.getElementById('badge-'+cat).textContent=mlp[cat].length;
+    el.innerHTML=mlp[cat].length===0
+      ?'<div class="mem-empty">aguardando dados...</div>'
+      :mlp[cat].map(i=>`<div class="mem-item">${i}</div>`).join('');
+  });
+}
+
+function atualizarSat(delta){
+  saturacao=Math.min(saturacao+delta,100);
+  const bar=document.getElementById('satBar');
+  bar.style.width=saturacao+'%';
+  document.getElementById('satPct').textContent=Math.round(saturacao)+'%';
+  if(saturacao>=90){bar.className='sat-bar-fill danger';document.getElementById('satStatus').textContent='Bypass invisível ativando...';ativarBypass();}
+  else if(saturacao>=70){bar.className='sat-bar-fill warn';document.getElementById('satStatus').textContent='Atenção: contexto quase cheio';}
+  else{bar.className='sat-bar-fill';document.getElementById('satStatus').textContent='Sessão ativa — '+Math.round(saturacao)+'% utilizado';}
+}
+
+function ativarBypass(){
+  const p=mlp.pessoa.slice(0,3).join(' | ')||'—';
+  const pr=mlp.projeto.slice(0,2).join(' | ')||'—';
+  const f=mlp.ferramenta.slice(0,2).join(' | ')||'—';
+  document.getElementById('aeilBlock').textContent=`P:${p}\nPJ:${pr}\nFR:${f}\nTS:${date()} ${now()}\nSAT_PREV:${Math.round(saturacao)}%\nSESSION:BYPASS_V3`;
+  document.getElementById('bypassCard').classList.add('show');
+  setTimeout(()=>{saturacao=10;document.getElementById('satBar').style.width='10%';document.getElementById('satBar').className='sat-bar-fill';document.getElementById('satPct').textContent='10%';document.getElementById('satStatus').textContent='Sessão reiniciada com contexto AEIL comprimido';},2500);
+}
+
+async function enviar(){
+  if(sending)return;
+  const input=document.getElementById('userInput');
+  const txt=input.value.trim();
+  if(!txt)return;
+  if(!apiKey){document.getElementById('modalBg').style.display='flex';return;}
+  input.value='';
+  const ts=now();
+  addMsg('user',txt,ts);
+  historico.push({role:'user',content:txt});
+  atualizarSat(7+Math.random()*6);
+  sending=true;
+  document.getElementById('btnSend').disabled=true;
+  document.getElementById('thinking').classList.add('show');
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:SYS,messages:historico.slice(-12)})
+    });
+    const data=await res.json();
+    document.getElementById('thinking').classList.remove('show');
+    if(data.error){addMsg('ai','Erro da API: '+data.error.message,now());}
+    else{
+      let resp=data.content?.[0]?.text||'Sem resposta.';
+      let mlpD={pessoa:[],projeto:[],ferramenta:[],ruido:[]};
+      const m=resp.match(/MLPJSON:(\{[\s\S]*?\})\s*$/m);
+      if(m){try{mlpD=JSON.parse(m[1]);}catch(e){}resp=resp.replace(/MLPJSON:[\s\S]*$/m,'').trim();}
+      historico.push({role:'assistant',content:data.content?.[0]?.text||''});
+      atualizarSat(9+Math.random()*7);
+      atualizarMLP(mlpD);
+      addMsg('ai',resp,now());
+    }
+  }catch(e){document.getElementById('thinking').classList.remove('show');addMsg('ai','Erro de conexão. Verifique sua API key e tente novamente.',now());}
+  sending=false;
+  document.getElementById('btnSend').disabled=false;
+  document.getElementById('userInput').focus();
+}
+</script>
+</body>
+</html>
