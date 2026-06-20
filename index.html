@@ -202,6 +202,8 @@ body{font-family:'Segoe UI','Inter',system-ui,sans-serif;background:var(--bg);co
       <div class="info-item">Claude extrai e classifica dados por hierarquia</div>
       <div class="info-item">Barra sobe a cada troca — em 90% dispara o Bypass</div>
       <div class="info-item">Bypass gera resumo AEIL comprimido (~10x)</div>
+      <div class="info-item">Consolidação Inteligente ocorre na janela de inatividade</div>
+      <div class="info-item">Decaimento temporal: passado perde peso automaticamente</div>
     </div>
   </div>
 </main>
@@ -215,13 +217,20 @@ const mlp={pessoa:[],projeto:[],ferramenta:[],ruido:[]};
 let historico=[];
 const SYS=`Você é o Claude com Memory Model V3 ativo. Responda SEMPRE em português brasileiro, de forma natural e amigável.
 
+ARQUITETURA ATIVA:
+- MCP (Memória de Curto Prazo): contexto desta sessão
+- MLP (Memória de Longo Prazo): fatos persistentes do usuário, organizados por hierarquia
+- AEIL: linguagem interna comprimida (~10x) usada no Bypass
+- Timestamps: cada mensagem tem hora/data registrada internamente
+- Consolidação Inteligente: durante janelas de inatividade do usuário, o sistema separa MCP→MLP, etiqueta e descarta ruído. Informações antigas perdem relevância automaticamente (decaimento temporal).
+
 REGRA OBRIGATÓRIA: ao final de CADA resposta, adicione exatamente uma linha começando com MLPJSON: seguida de um objeto JSON com as chaves pessoa, projeto, ferramenta, ruido. Cada chave é um array de strings curtas com novos dados aprendidos nessa mensagem. Se não há dados novos para uma categoria, use [].
 
-Hierarquia:
-- pessoa: nome, apelido, idade, profissão, localização, valores
-- projeto: nome do app/sistema, objetivo, status, problema atual
-- ferramenta: linguagens, frameworks, bibliotecas, versões
-- ruido: detalhes cotidianos passageiros (não vale guardar)
+Hierarquia de importância:
+- pessoa: nome, apelido, idade, profissão, localização, valores (MÁXIMA — nunca descartar)
+- projeto: nome do app/sistema, objetivo, status, problema atual (ALTA — enquanto ativo)
+- ferramenta: linguagens, frameworks, bibliotecas, versões (BAIXA — descartável)
+- ruido: detalhes cotidianos passageiros (NÃO guardar)
 
 Exemplo: MLPJSON:{"pessoa":["nome: Maria","cidade: SP"],"projeto":["app: receitas"],"ferramenta":["React Native"],"ruido":[]}
 
@@ -283,7 +292,7 @@ function ativarBypass(){
   const p=mlp.pessoa.slice(0,3).join(' | ')||'—';
   const pr=mlp.projeto.slice(0,2).join(' | ')||'—';
   const f=mlp.ferramenta.slice(0,2).join(' | ')||'—';
-  document.getElementById('aeilBlock').textContent=`P:${p}\nPJ:${pr}\nFR:${f}\nTS:${date()} ${now()}\nSAT_PREV:${Math.round(saturacao)}%\nSESSION:BYPASS_V3`;
+  document.getElementById('aeilBlock').textContent=`P:${p}\nPJ:${pr}\nFR:${f}\nTS:${date()} ${now()}\nSAT_PREV:${Math.round(saturacao)}%\nCONSOL:JANELA_INATIV\nDECAY:AUTO\nSESSION:BYPASS_V3`;
   document.getElementById('bypassCard').classList.add('show');
   setTimeout(()=>{saturacao=10;document.getElementById('satBar').style.width='10%';document.getElementById('satBar').className='sat-bar-fill';document.getElementById('satPct').textContent='10%';document.getElementById('satStatus').textContent='Sessão reiniciada com contexto AEIL comprimido';},2500);
 }
