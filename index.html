@@ -5,336 +5,208 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Memory Model V3 — Demo Interativa</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#f8f9fb;--surface:#ffffff;--surface2:#f1f4f8;--surface3:#e8edf5;
-  --blue:#1a56db;--blue-lt:#e8f0fe;--blue-dk:#1240a0;
-  --purple:#534AB7;--purple-lt:#EEEDFE;--purple-dk:#3C3489;
-  --green:#0F6E56;--green-lt:#E1F5EE;--green-dk:#085041;
-  --amber:#BA7517;--amber-lt:#FAEEDA;--amber-dk:#633806;
-  --gray:#5F5E5A;--gray-lt:#F1EFE8;--gray-dk:#444441;
-  --red:#A32D2D;--red-lt:#FCEBEB;
-  --text:#1a1f2e;--text2:#4a5568;--text3:#9aa3b0;
-  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
-  --radius:12px;--radius-sm:8px;
-  --shadow:0 1px 4px rgba(0,0,0,0.08);
-  --shadow-md:0 4px 16px rgba(0,0,0,0.10);
-}
-body{font-family:'Segoe UI','Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
-.header-left{display:flex;align-items:center;gap:12px;}
-.logo{width:36px;height:36px;background:linear-gradient(135deg,#1a56db,#534AB7);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:900;flex-shrink:0;}
-.header-title{font-size:16px;font-weight:700;color:var(--text);}
-.header-sub{font-size:12px;color:var(--text3);margin-top:1px;}
-.header-badge{font-size:11px;background:var(--blue-lt);color:var(--blue-dk);padding:4px 10px;border-radius:20px;font-weight:600;border:1px solid rgba(26,86,219,0.15);}
-.author a{color:var(--blue);text-decoration:none;font-weight:600;font-size:11px;}
-.author a:hover{text-decoration:underline;}
-.main{max-width:1100px;margin:0 auto;padding:24px 20px;display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;}
-.chat-panel{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
-.chat-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
-.chat-header-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,0.2);}
-.chat-header-title{font-size:13px;font-weight:600;color:var(--text);}
-.chat-header-sub{font-size:11px;color:var(--text3);margin-left:auto;}
-.msgs{height:440px;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:var(--bg);}
-.msgs::-webkit-scrollbar{width:4px;}
-.msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
-.msg{display:flex;flex-direction:column;gap:4px;max-width:82%;}
-.msg.user{align-self:flex-end;align-items:flex-end;}
-.msg.ai{align-self:flex-start;align-items:flex-start;}
-.bubble{padding:11px 15px;border-radius:16px;font-size:14px;line-height:1.65;color:var(--text);}
-.msg.user .bubble{background:var(--blue);color:#fff;border-bottom-right-radius:4px;}
-.msg.ai .bubble{background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:4px;box-shadow:var(--shadow);}
-.msg-meta{display:flex;align-items:center;gap:6px;}
-.ts{font-size:10px;color:var(--text3);font-family:'Courier New',monospace;}
-.ts-label{font-size:10px;color:var(--text3);background:var(--surface3);padding:1px 6px;border-radius:4px;font-family:'Courier New',monospace;}
-.thinking{display:none;align-items:center;gap:8px;padding:12px 18px;font-size:13px;color:var(--text3);background:var(--bg);border-top:1px solid var(--border);}
-.thinking.show{display:flex;}
-.dots{display:flex;gap:4px;}
-.dots span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce 1s infinite;}
-.dots span:nth-child(2){animation-delay:.2s;}
-.dots span:nth-child(3){animation-delay:.4s;}
-@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
-.input-area{padding:14px 16px;border-top:1px solid var(--border);background:var(--surface);display:flex;gap:10px;align-items:center;}
-.input-area input{flex:1;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;transition:border-color .2s;}
-.input-area input:focus{border-color:var(--blue);}
-.input-area input::placeholder{color:var(--text3);}
-.btn-send{background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;}
-.btn-send:hover{background:var(--blue-dk);}
-.btn-send:disabled{opacity:.5;cursor:not-allowed;}
-.mlp-panel{display:flex;flex-direction:column;gap:14px;}
-.panel-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);padding-left:2px;}
-.sat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
-.sat-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
-.sat-title{font-size:12px;font-weight:600;color:var(--text2);}
-.sat-pct{font-size:20px;font-weight:700;color:var(--text);font-family:'Courier New',monospace;}
-.sat-bar-bg{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;}
-.sat-bar-fill{height:100%;border-radius:3px;transition:width .6s ease,background .4s;background:var(--blue);}
-.sat-bar-fill.warn{background:var(--amber);}
-.sat-bar-fill.danger{background:var(--red);}
-.sat-status{font-size:11px;color:var(--text3);margin-top:6px;}
-.mlp-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
-.mlp-card-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:14px;}
-.cat{margin-bottom:14px;}
-.cat:last-child{margin-bottom:0;}
-.cat-head{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
-.cat-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.cat-name{font-size:12px;font-weight:600;color:var(--text);}
-.cat-count{font-size:10px;padding:1px 7px;border-radius:10px;margin-left:auto;font-weight:700;}
-.cat-pessoa .cat-dot{background:var(--purple);}
-.cat-pessoa .cat-count{background:var(--purple-lt);color:var(--purple-dk);}
-.cat-projeto .cat-dot{background:var(--green);}
-.cat-projeto .cat-count{background:var(--green-lt);color:var(--green-dk);}
-.cat-ferramenta .cat-dot{background:var(--amber);}
-.cat-ferramenta .cat-count{background:var(--amber-lt);color:var(--amber-dk);}
-.cat-ruido .cat-dot{background:var(--gray);}
-.cat-ruido .cat-count{background:var(--gray-lt);color:var(--gray-dk);}
-.mem-item{font-size:11px;color:var(--text2);background:var(--surface2);border-left:2px solid var(--border2);border-radius:0 4px 4px 0;padding:4px 8px;margin-bottom:3px;font-family:'Courier New',monospace;line-height:1.5;animation:fadeIn .4s ease;}
-@keyframes fadeIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-.mem-empty{font-size:11px;color:var(--text3);font-style:italic;padding:2px 4px;}
-.bypass-card{background:var(--green-lt);border:1px solid rgba(15,110,86,0.25);border-radius:var(--radius);padding:14px;display:none;box-shadow:var(--shadow);}
-.bypass-card.show{display:block;animation:fadeIn .5s ease;}
-.bypass-title{font-size:12px;font-weight:700;color:var(--green-dk);margin-bottom:8px;}
-.bypass-body{font-size:11px;color:var(--green-dk);line-height:1.6;margin-bottom:8px;}
-.aeil-block{font-family:'Courier New',monospace;font-size:10px;background:rgba(255,255,255,0.7);border:1px solid rgba(15,110,86,0.2);border-radius:6px;padding:8px 10px;color:var(--green-dk);line-height:1.8;white-space:pre;}
-.info-card{background:var(--blue-lt);border:1px solid rgba(26,86,219,0.15);border-radius:var(--radius);padding:14px;}
-.info-title{font-size:11px;font-weight:700;color:var(--blue-dk);margin-bottom:6px;}
-.info-item{font-size:11px;color:var(--blue-dk);line-height:1.7;display:flex;gap:6px;margin-bottom:2px;}
-.info-item::before{content:"→";flex-shrink:0;}
-@media(max-width:720px){.main{grid-template-columns:1fr;}.header-badge{display:none;}}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;}
-.modal{background:var(--surface);border-radius:var(--radius);padding:28px;max-width:440px;width:100%;box-shadow:var(--shadow-md);}
-.modal h2{font-size:18px;font-weight:700;margin-bottom:10px;}
-.modal p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px;}
-.modal input{width:100%;border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;color:var(--text);}
-.modal input:focus{border-color:var(--blue);}
-.btn-primary{width:100%;background:var(--blue);color:#fff;border:none;border-radius:var(--radius-sm);padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
-.btn-primary:hover{background:var(--blue-dk);}
-.modal-note{font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6;}
-.modal-note a{color:var(--blue);}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f5f2; color: #1a1a18; min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 720px; margin: 0 auto; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 8px; }
+  .title { font-size: 18px; font-weight: 500; }
+  .subtitle { font-size: 12px; color: #888; margin-top: 2px; }
+  .clock { font-size: 13px; font-family: monospace; color: #185FA5; background: #E6F1FB; border: 1px solid #B5D4F4; border-radius: 8px; padding: 4px 12px; }
+  .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .card { background: #fff; border: 1px solid #e8e8e4; border-radius: 12px; padding: 1rem; }
+  .card-full { background: #fff; border: 1px solid #e8e8e4; border-radius: 12px; padding: 1rem; margin-bottom: 12px; }
+  .stat { font-size: 24px; font-weight: 500; }
+  .stat-muted { font-size: 13px; color: #888; margin-top: 2px; }
+  .bar-bg { height: 8px; background: #f0f0ec; border-radius: 4px; margin-top: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .bar-ok { background: #1D9E75; }
+  .bar-warn { background: #EF9F27; }
+  .bar-danger { background: #E24B4A; }
+  .mlp { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .mlp-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .mlp-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; min-width: 80px; text-align: center; font-weight: 500; }
+  .tag-pessoa { background: #EEEDFE; color: #3C3489; }
+  .tag-projeto { background: #E1F5EE; color: #085041; }
+  .tag-ferramenta { background: #E6F1FB; color: #0C447C; }
+  .tag-ruido { background: #F1EFE8; color: #444441; }
+  .mlp-val { color: #555; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mlp-ts { font-family: monospace; font-size: 11px; color: #aaa; }
+  .chat-area { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .msg { font-size: 13px; padding: 8px 12px; border-radius: 10px; max-width: 85%; line-height: 1.5; }
+  .msg-user { background: #E6F1FB; color: #1a1a18; align-self: flex-end; border-bottom-right-radius: 3px; }
+  .msg-ai { background: #f5f5f2; color: #1a1a18; align-self: flex-start; border-bottom-left-radius: 3px; border: 1px solid #e8e8e4; }
+  .msg-ts { font-size: 10px; color: #aaa; margin-top: 3px; font-family: monospace; }
+  .input-row { display: flex; gap: 8px; }
+  .input-row input { flex: 1; font-size: 13px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-family: inherit; background: #fff; }
+  .input-row input:focus { border-color: #378ADD; }
+  .input-row button { padding: 8px 16px; font-size: 13px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; font-family: inherit; }
+  .input-row button:hover { background: #f0f0ec; }
+  .bypass-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 10px; border-radius: 10px; background: #FAEEDA; color: #854F0B; border: 1px solid #FAC775; margin-top: 6px; }
+  .consolidation { font-size: 12px; padding: 8px 12px; border-radius: 8px; border: 1px solid #e8e8e4; background: #fafafa; color: #666; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot-green { background: #1D9E75; }
+  .dot-amber { background: #EF9F27; }
+  .empty-hint { font-size: 13px; color: #aaa; margin-top: 4px; }
+  footer { text-align: center; font-size: 11px; color: #bbb; margin-top: 2rem; line-height: 2; }
+  footer a { color: #888; }
+  @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
-
-<div class="modal-bg" id="modalBg">
-  <div class="modal">
-    <h2>🔑 API Key da Anthropic</h2>
-    <p>Esta demo usa a API da Anthropic diretamente no seu navegador. A chave fica <strong>apenas na memória da página</strong> — nunca é salva nem enviada a nenhum servidor externo. Some ao fechar a aba.</p>
-    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." onkeydown="if(event.key==='Enter')salvarKey()" />
-    <button class="btn-primary" onclick="salvarKey()">Iniciar Demo →</button>
-    <p class="modal-note">Não tem uma API key? Crie gratuitamente em <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
-  </div>
-</div>
-
-<header class="header">
-  <div class="header-left">
-    <div class="logo">M</div>
+<div class="container">
+  <div class="header">
     <div>
-      <div class="header-title">Memory Model V3</div>
-      <div class="header-sub">Demo Interativa — A. W. Staiger &amp; Anthropic (Claude) · Cosmópolis, Brasil 2026</div>
+      <div class="title">Memory Model V3</div>
+      <div class="subtitle">demo interativa — proposta de Anthony W. Staiger &amp; Anthropic/Claude · 2026</div>
     </div>
+    <div class="clock" id="clock">--:--:--</div>
   </div>
-  <div style="display:flex;align-items:center;gap:12px;">
-    <div class="header-badge">v3.0 · 2026</div>
-    <div class="author"><a href="https://github.com/anthonystaiger8-bit/memory-model" target="_blank">Ver repositório →</a></div>
-  </div>
-</header>
 
-<main class="main">
-  <div class="chat-panel">
-    <div class="chat-header">
-      <div class="chat-header-dot"></div>
-      <span class="chat-header-title">Chat com Claude — MLP ativo</span>
-      <span class="chat-header-sub" id="msgCount">0 mensagens</span>
+  <div class="grid">
+    <div class="card">
+      <div class="label">saturação do contexto</div>
+      <div class="stat" id="sat-val">0%</div>
+      <div class="stat-muted" id="sat-status">contexto limpo</div>
+      <div class="bar-bg"><div class="bar-fill bar-ok" id="sat-bar" style="width:0%"></div></div>
     </div>
-    <div class="msgs" id="msgs">
-      <div class="msg ai">
-        <div class="bubble">Olá! Sou o Claude com o <strong>Memory Model V3</strong> ativo.<br><br>Enquanto conversamos, observe o painel à direita — ele mostra em tempo real o que estou aprendendo sobre você, com <strong>timestamps por mensagem</strong> e <strong>hierarquia de importância</strong>: Pessoa → Projeto → Ferramenta → Ruído.<br><br>Me conta: qual é o seu nome e o que você está desenvolvendo?</div>
-        <div class="msg-meta"><span class="ts-label">timestamp</span><span class="ts" id="ts-init"></span></div>
-      </div>
-    </div>
-    <div class="thinking" id="thinking">
-      <div class="dots"><span></span><span></span><span></span></div>
-      <span>Claude está processando e atualizando o MLP...</span>
-    </div>
-    <div class="input-area">
-      <input type="text" id="userInput" placeholder="Digite sua mensagem e pressione Enter..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)enviar()" />
-      <button class="btn-send" id="btnSend" onclick="enviar()">Enviar →</button>
+    <div class="card">
+      <div class="label">mensagens na sessão</div>
+      <div class="stat" id="msg-count">0</div>
+      <div class="stat-muted" id="bypass-info">sem bypass ativo</div>
+      <div id="bypass-badge-area"></div>
     </div>
   </div>
 
-  <div class="mlp-panel">
-    <div class="panel-label">Memória de Longo Prazo</div>
-    <div class="sat-card">
-      <div class="sat-top">
-        <span class="sat-title">Saturação de contexto</span>
-        <span class="sat-pct" id="satPct">0%</span>
-      </div>
-      <div class="sat-bar-bg"><div class="sat-bar-fill" id="satBar" style="width:0%"></div></div>
-      <div class="sat-status" id="satStatus">Sessão iniciada — aguardando mensagens</div>
-    </div>
-    <div class="mlp-card">
-      <div class="mlp-card-title">🧠 MLP — Categorias</div>
-      <div class="cat cat-pessoa">
-        <div class="cat-head"><div class="cat-dot"></div><span class="cat-name">Pessoa</span><span class="cat-count" id="badge-pessoa">0</span></div>
-        <div id="mem-pessoa"><div class="mem-empty">aguardando dados...</div></div>
-      </div>
-      <div class="cat cat-projeto">
-        <div class="cat-head"><div class="cat-dot"></div><span class="cat-name">Projeto</span><span class="cat-count" id="badge-projeto">0</span></div>
-        <div id="mem-projeto"><div class="mem-empty">aguardando dados...</div></div>
-      </div>
-      <div class="cat cat-ferramenta">
-        <div class="cat-head"><div class="cat-dot"></div><span class="cat-name">Ferramenta</span><span class="cat-count" id="badge-ferramenta">0</span></div>
-        <div id="mem-ferramenta"><div class="mem-empty">aguardando dados...</div></div>
-      </div>
-      <div class="cat cat-ruido">
-        <div class="cat-head"><div class="cat-dot"></div><span class="cat-name">Ruído</span><span class="cat-count" id="badge-ruido">0</span></div>
-        <div id="mem-ruido"><div class="mem-empty">descartando...</div></div>
-      </div>
-    </div>
-    <div class="bypass-card" id="bypassCard">
-      <div class="bypass-title">⚡ Bypass invisível ativado</div>
-      <div class="bypass-body">Contexto atingiu 90%. Resumo AEIL gerado — nova sessão iniciada com contexto comprimido.</div>
-      <div class="aeil-block" id="aeilBlock"></div>
-    </div>
-    <div class="info-card">
-      <div class="info-title">Como funciona esta demo</div>
-      <div class="info-item">Cada mensagem recebe um timestamp oculto</div>
-      <div class="info-item">Claude extrai e classifica dados por hierarquia</div>
-      <div class="info-item">Barra sobe a cada troca — em 90% dispara o Bypass</div>
-      <div class="info-item">Bypass gera resumo AEIL comprimido (~10x)</div>
-      <div class="info-item">Consolidação Inteligente ocorre na janela de inatividade</div>
-      <div class="info-item">Decaimento temporal: passado perde peso automaticamente</div>
+  <div class="card-full">
+    <div class="label">categorização MLP em tempo real</div>
+    <div class="mlp" id="mlp-list">
+      <div class="empty-hint">envie uma mensagem para ver a categorização automática</div>
     </div>
   </div>
-</main>
 
+  <div class="card-full">
+    <div class="label">chat com timestamp por mensagem</div>
+    <div class="chat-area" id="chat-area"></div>
+    <div class="input-row">
+      <input type="text" id="chat-input" placeholder="ex: meu nome é Anthony, estou trabalhando no projeto Horácio com Python..." />
+      <button onclick="sendMsg()">enviar →</button>
+    </div>
+  </div>
+
+  <div class="consolidation">
+    <span class="dot dot-green" id="consol-dot"></span>
+    <span>janela de consolidação: <strong id="consol-text">inativa (usuário ativo)</strong></span>
+    <span style="margin-left:auto; font-family:monospace;" id="consol-hour">--h</span>
+  </div>
+
+  <footer>
+    <a href="https://github.com/anthonystaiger8-bit/memory-model" target="_blank">github.com/anthonystaiger8-bit/memory-model</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/sponsors/anthonystaiger8-bit" target="_blank">apoie o projeto</a>
+  </footer>
+</div>
 <script>
-const now=()=>new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-const date=()=>new Date().toLocaleDateString('pt-BR');
-document.getElementById('ts-init').textContent=date()+' '+now();
-let apiKey='',saturacao=0,msgCount=0,sending=false;
-const mlp={pessoa:[],projeto:[],ferramenta:[],ruido:[]};
-let historico=[];
-const SYS=`Você é o Claude com Memory Model V3 ativo. Responda SEMPRE em português brasileiro, de forma natural e amigável.
+  const mlpData = [];
+  let msgCount = 0;
+  let saturation = 0;
+  let bypassCount = 0;
 
-ARQUITETURA ATIVA:
-- MCP (Memória de Curto Prazo): contexto desta sessão
-- MLP (Memória de Longo Prazo): fatos persistentes do usuário, organizados por hierarquia
-- AEIL: linguagem interna comprimida (~10x) usada no Bypass
-- Timestamps: cada mensagem tem hora/data registrada internamente
-- Consolidação Inteligente: durante janelas de inatividade do usuário, o sistema separa MCP→MLP, etiqueta e descarta ruído. Informações antigas perdem relevância automaticamente (decaimento temporal).
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function getTs(d){ return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()); }
 
-REGRA OBRIGATÓRIA: ao final de CADA resposta, adicione exatamente uma linha começando com MLPJSON: seguida de um objeto JSON com as chaves pessoa, projeto, ferramenta, ruido. Cada chave é um array de strings curtas com novos dados aprendidos nessa mensagem. Se não há dados novos para uma categoria, use [].
+  function updateClock(){
+    const d = new Date();
+    document.getElementById('clock').textContent = getTs(d);
+    document.getElementById('consol-hour').textContent = pad(d.getHours())+'h';
+    const h = d.getHours();
+    const active = h >= 3 && h < 5;
+    document.getElementById('consol-text').textContent = active
+      ? 'ATIVA — consolidando memória silenciosamente'
+      : 'inativa (usuário ativo)';
+    document.getElementById('consol-dot').className = 'dot ' + (active ? 'dot-amber' : 'dot-green');
+  }
 
-Hierarquia de importância:
-- pessoa: nome, apelido, idade, profissão, localização, valores (MÁXIMA — nunca descartar)
-- projeto: nome do app/sistema, objetivo, status, problema atual (ALTA — enquanto ativo)
-- ferramenta: linguagens, frameworks, bibliotecas, versões (BAIXA — descartável)
-- ruido: detalhes cotidianos passageiros (NÃO guardar)
+  function classifyMLP(text){
+    const t = text.toLowerCase();
+    if(t.match(/meu nome|me chamo|sou o|sou a|anthony|família|mãe|pai|irmão|amigo/)) return 'Pessoa';
+    if(t.match(/projeto|horácio|memory model|app|repositório|github|sponsors|demo/)) return 'Projeto';
+    if(t.match(/python|android|api|claude|gemini|javascript|código|função|sdk|java|kotlin/)) return 'Ferramenta';
+    return 'Ruído';
+  }
 
-Exemplo: MLPJSON:{"pessoa":["nome: Maria","cidade: SP"],"projeto":["app: receitas"],"ferramenta":["React Native"],"ruido":[]}
+  function tagClass(cat){
+    return {Pessoa:'tag-pessoa',Projeto:'tag-projeto',Ferramenta:'tag-ferramenta',Ruído:'tag-ruido'}[cat];
+  }
 
-IMPORTANTE: nunca mencione o MLPJSON na conversa. É invisível para o usuário.`;
-
-function salvarKey(){
-  const k=document.getElementById('apiKeyInput').value.trim();
-  if(!k.startsWith('sk-ant')){alert('Chave inválida. Deve começar com sk-ant-...');return;}
-  apiKey=k;
-  document.getElementById('modalBg').style.display='none';
-  addMsg('ai','Perfeito! Conexão estabelecida. Pode começar a conversar — o MLP ao lado vai se preencher em tempo real!',now());
-}
-
-function addMsg(role,text,ts){
-  msgCount++;
-  document.getElementById('msgCount').textContent=msgCount+' mensagem'+(msgCount!==1?'s':'');
-  const msgs=document.getElementById('msgs');
-  const div=document.createElement('div');
-  div.className='msg '+role;
-  const safe=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-  div.innerHTML=`<div class="bubble">${safe}</div><div class="msg-meta"><span class="ts-label">timestamp</span><span class="ts">${date()} ${ts}</span></div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop=msgs.scrollHeight;
-}
-
-function atualizarMLP(dados){
-  ['pessoa','projeto','ferramenta','ruido'].forEach(cat=>{
-    if(dados[cat]&&Array.isArray(dados[cat])){
-      dados[cat].forEach(item=>{
-        const t=item.trim();
-        if(t&&!mlp[cat].some(x=>x.toLowerCase()===t.toLowerCase()))mlp[cat].push(t);
-      });
+  function updateSaturation(add){
+    saturation = Math.min(100, saturation + add);
+    const pct = Math.round(saturation);
+    document.getElementById('sat-val').textContent = pct+'%';
+    const bar = document.getElementById('sat-bar');
+    bar.style.width = pct+'%';
+    bar.className = 'bar-fill ' + (pct < 60 ? 'bar-ok' : pct < 85 ? 'bar-warn' : 'bar-danger');
+    document.getElementById('sat-status').textContent =
+      pct < 60 ? 'contexto limpo' : pct < 85 ? 'atenção: contexto alto' : 'bypass ativado!';
+    if(pct >= 85){
+      bypassCount++;
+      saturation = 15;
+      document.getElementById('bypass-badge-area').innerHTML =
+        '<div class="bypass-badge">⚡ bypass invisível #'+bypassCount+' ativado — AEIL</div>';
+      document.getElementById('bypass-info').textContent = 'contexto comprimido (AEIL)';
+      addAIMsg('🔄 [Bypass Invisível ativado] Contexto comprimido internamente via AEIL. Continuando sem perda de informação relevante.');
     }
+  }
+
+  function addAIMsg(text){
+    const t = getTs(new Date());
+    const area = document.getElementById('chat-area');
+    area.innerHTML += '<div><div class="msg msg-ai">'+text+'</div><div class="msg-ts">'+t+'</div></div>';
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function sendMsg(){
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if(!text) return;
+    input.value = '';
+
+    const t = getTs(new Date());
+    const area = document.getElementById('chat-area');
+    area.innerHTML += '<div style="display:flex;flex-direction:column;align-items:flex-end"><div class="msg msg-user">'+text+'</div><div class="msg-ts" style="text-align:right">'+t+'</div></div>';
+    area.scrollTop = area.scrollHeight;
+
+    msgCount++;
+    document.getElementById('msg-count').textContent = msgCount;
+
+    const cat = classifyMLP(text);
+    const short = text.length > 45 ? text.slice(0,45)+'…' : text;
+    mlpData.unshift({cat, text: short, ts: t});
+    if(mlpData.length > 5) mlpData.pop();
+
+    document.getElementById('mlp-list').innerHTML = mlpData.map(function(d){
+      return '<div class="mlp-row"><span class="mlp-tag '+tagClass(d.cat)+'">'+d.cat+'</span><span class="mlp-val">'+d.text+'</span><span class="mlp-ts">'+d.ts+'</span></div>';
+    }).join('');
+
+    updateSaturation(12 + Math.random()*8);
+
+    setTimeout(function(){
+      const responses = {
+        Pessoa: 'Entendido. Informação categorizada como Pessoa → armazenada no MLP. Timestamp: '+t+'.',
+        Projeto: 'Contexto de projeto registrado. Timestamp: '+t+'. Associado ao escopo ativo.',
+        Ferramenta: 'Ferramenta identificada e indexada. Timestamp: '+t+'.',
+        Ruído: 'Mensagem recebida. Classificada como Ruído — baixa prioridade no MLP. Timestamp: '+t+'.'
+      };
+      addAIMsg(responses[cat]);
+    }, 350);
+  }
+
+  document.getElementById('chat-input').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') sendMsg();
   });
-  renderMLP();
-}
 
-function renderMLP(){
-  ['pessoa','projeto','ferramenta','ruido'].forEach(cat=>{
-    const el=document.getElementById('mem-'+cat);
-    document.getElementById('badge-'+cat).textContent=mlp[cat].length;
-    el.innerHTML=mlp[cat].length===0
-      ?'<div class="mem-empty">aguardando dados...</div>'
-      :mlp[cat].map(i=>`<div class="mem-item">${i}</div>`).join('');
-  });
-}
-
-function atualizarSat(delta){
-  saturacao=Math.min(saturacao+delta,100);
-  const bar=document.getElementById('satBar');
-  bar.style.width=saturacao+'%';
-  document.getElementById('satPct').textContent=Math.round(saturacao)+'%';
-  if(saturacao>=90){bar.className='sat-bar-fill danger';document.getElementById('satStatus').textContent='Bypass invisível ativando...';ativarBypass();}
-  else if(saturacao>=70){bar.className='sat-bar-fill warn';document.getElementById('satStatus').textContent='Atenção: contexto quase cheio';}
-  else{bar.className='sat-bar-fill';document.getElementById('satStatus').textContent='Sessão ativa — '+Math.round(saturacao)+'% utilizado';}
-}
-
-function ativarBypass(){
-  const p=mlp.pessoa.slice(0,3).join(' | ')||'—';
-  const pr=mlp.projeto.slice(0,2).join(' | ')||'—';
-  const f=mlp.ferramenta.slice(0,2).join(' | ')||'—';
-  document.getElementById('aeilBlock').textContent=`P:${p}\nPJ:${pr}\nFR:${f}\nTS:${date()} ${now()}\nSAT_PREV:${Math.round(saturacao)}%\nCONSOL:JANELA_INATIV\nDECAY:AUTO\nSESSION:BYPASS_V3`;
-  document.getElementById('bypassCard').classList.add('show');
-  setTimeout(()=>{saturacao=10;document.getElementById('satBar').style.width='10%';document.getElementById('satBar').className='sat-bar-fill';document.getElementById('satPct').textContent='10%';document.getElementById('satStatus').textContent='Sessão reiniciada com contexto AEIL comprimido';},2500);
-}
-
-async function enviar(){
-  if(sending)return;
-  const input=document.getElementById('userInput');
-  const txt=input.value.trim();
-  if(!txt)return;
-  if(!apiKey){document.getElementById('modalBg').style.display='flex';return;}
-  input.value='';
-  const ts=now();
-  addMsg('user',txt,ts);
-  historico.push({role:'user',content:txt});
-  atualizarSat(7+Math.random()*6);
-  sending=true;
-  document.getElementById('btnSend').disabled=true;
-  document.getElementById('thinking').classList.add('show');
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,system:SYS,messages:historico.slice(-12)})
-    });
-    const data=await res.json();
-    document.getElementById('thinking').classList.remove('show');
-    if(data.error){addMsg('ai','Erro da API: '+data.error.message,now());}
-    else{
-      let resp=data.content?.[0]?.text||'Sem resposta.';
-      let mlpD={pessoa:[],projeto:[],ferramenta:[],ruido:[]};
-      const m=resp.match(/MLPJSON:(\{[\s\S]*?\})\s*$/m);
-      if(m){try{mlpD=JSON.parse(m[1]);}catch(e){}resp=resp.replace(/MLPJSON:[\s\S]*$/m,'').trim();}
-      historico.push({role:'assistant',content:data.content?.[0]?.text||''});
-      atualizarSat(9+Math.random()*7);
-      atualizarMLP(mlpD);
-      addMsg('ai',resp,now());
-    }
-  }catch(e){document.getElementById('thinking').classList.remove('show');addMsg('ai','Erro de conexão. Verifique sua API key e tente novamente.',now());}
-  sending=false;
-  document.getElementById('btnSend').disabled=false;
-  document.getElementById('userInput').focus();
-}
+  updateClock();
+  setInterval(updateClock, 1000);
 </script>
 </body>
 </html>
