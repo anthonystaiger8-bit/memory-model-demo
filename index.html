@@ -32,10 +32,11 @@
   .tag-ruido { background: #F1EFE8; color: #444441; }
   .mlp-val { color: #555; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mlp-ts { font-family: monospace; font-size: 11px; color: #aaa; }
-  .chat-area { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .chat-area { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
   .msg { font-size: 13px; padding: 8px 12px; border-radius: 10px; max-width: 85%; line-height: 1.5; }
   .msg-user { background: #E6F1FB; color: #1a1a18; align-self: flex-end; border-bottom-right-radius: 3px; }
   .msg-ai { background: #f5f5f2; color: #1a1a18; align-self: flex-start; border-bottom-left-radius: 3px; border: 1px solid #e8e8e4; }
+  .msg-system { background: #FAEEDA; color: #854F0B; align-self: flex-start; border-bottom-left-radius: 3px; border: 1px solid #FAC775; font-style: italic; }
   .msg-ts { font-size: 10px; color: #aaa; margin-top: 3px; font-family: monospace; }
   .input-row { display: flex; gap: 8px; }
   .input-row input { flex: 1; font-size: 13px; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-family: inherit; background: #fff; }
@@ -43,10 +44,13 @@
   .input-row button { padding: 8px 16px; font-size: 13px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; font-family: inherit; }
   .input-row button:hover { background: #f0f0ec; }
   .bypass-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 10px; border-radius: 10px; background: #FAEEDA; color: #854F0B; border: 1px solid #FAC775; margin-top: 6px; }
+  .context-banner { font-size: 12px; padding: 8px 12px; border-radius: 8px; border: 1px solid #e8e8e4; background: #fafafa; color: #555; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
   .consolidation { font-size: 12px; padding: 8px 12px; border-radius: 8px; border: 1px solid #e8e8e4; background: #fafafa; color: #666; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
   .dot-green { background: #1D9E75; }
   .dot-amber { background: #EF9F27; }
+  .dot-blue { background: #185FA5; }
+  .dot-purple { background: #6B4FBB; }
   .empty-hint { font-size: 13px; color: #aaa; margin-top: 4px; }
   footer { text-align: center; font-size: 11px; color: #bbb; margin-top: 2rem; line-height: 2; }
   footer a { color: #888; }
@@ -55,12 +59,19 @@
 </head>
 <body>
 <div class="container">
+
   <div class="header">
     <div>
       <div class="title">Memory Model V3</div>
       <div class="subtitle">demo interativa — proposta de Anthony W. Staiger &amp; Anthropic/Claude · 2026</div>
     </div>
     <div class="clock" id="clock">--:--:--</div>
+  </div>
+
+  <!-- Banner de contexto temporal -->
+  <div class="context-banner" id="context-banner">
+    <span class="dot dot-green" id="context-dot"></span>
+    <span id="context-msg">Carregando contexto temporal...</span>
   </div>
 
   <div class="grid">
@@ -89,7 +100,7 @@
     <div class="label">chat com timestamp por mensagem</div>
     <div class="chat-area" id="chat-area"></div>
     <div class="input-row">
-      <input type="text" id="chat-input" placeholder="ex: meu nome é Anthony, estou trabalhando no projeto Horácio com Python..." />
+      <input type="text" id="chat-input" placeholder="ex: meu nome é Anthony, estou trabalhando no projeto Horácio..." />
       <button onclick="sendMsg()">enviar →</button>
     </div>
   </div>
@@ -105,26 +116,57 @@
     &nbsp;·&nbsp;
     <a href="https://github.com/sponsors/anthonystaiger8-bit" target="_blank">apoie o projeto</a>
   </footer>
+
 </div>
 <script>
   const mlpData = [];
   let msgCount = 0;
   let saturation = 0;
   let bypassCount = 0;
+  let lastMsgTime = null;
+  let sessionStart = new Date();
 
   function pad(n){ return String(n).padStart(2,'0'); }
   function getTs(d){ return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()); }
 
+  function getTemporalContext(h) {
+    if(h >= 0 && h < 3)  return { msg: '🌙 Madrugada — monitorando inatividade para janela de consolidação.', dot: 'dot-purple' };
+    if(h >= 3 && h < 5)  return { msg: '⚡ Janela de Consolidação ATIVA — processando memória em segundo plano.', dot: 'dot-amber' };
+    if(h >= 5 && h < 12) return { msg: '🌅 Bom dia! Contexto da sessão anterior carregado. Sistema operando normalmente.', dot: 'dot-green' };
+    if(h >= 12 && h < 18) return { msg: '☀️ Boa tarde! Sistema operando normalmente.', dot: 'dot-green' };
+    if(h >= 18 && h < 21) return { msg: '🌆 Boa noite! Consolidação programada para madrugada.', dot: 'dot-blue' };
+    return { msg: '🌙 Noite avançada — aproximando-se da janela de consolidação (03h-05h).', dot: 'dot-purple' };
+  }
+
+  function getGapMsg(minutes) {
+    if(minutes < 1)   return null;
+    if(minutes < 10)  return '⏱️ Pausa de ' + Math.round(minutes) + ' min detectada. Contexto mantido.';
+    if(minutes < 60)  return '⏱️ Gap de ' + Math.round(minutes) + ' minutos registrado. Retomando contexto...';
+    return '⏱️ Gap de ' + Math.round(minutes/60) + 'h registrado. Recarregando contexto relevante do MLP...';
+  }
+
   function updateClock(){
     const d = new Date();
-    document.getElementById('clock').textContent = getTs(d);
-    document.getElementById('consol-hour').textContent = pad(d.getHours())+'h';
     const h = d.getHours();
-    const active = h >= 3 && h < 5;
-    document.getElementById('consol-text').textContent = active
+    document.getElementById('clock').textContent = getTs(d);
+    document.getElementById('consol-hour').textContent = pad(h)+'h';
+
+    const inWindow = h >= 3 && h < 5;
+    document.getElementById('consol-text').textContent = inWindow
       ? 'ATIVA — consolidando memória silenciosamente'
       : 'inativa (usuário ativo)';
-    document.getElementById('consol-dot').className = 'dot ' + (active ? 'dot-amber' : 'dot-green');
+    document.getElementById('consol-dot').className = 'dot ' + (inWindow ? 'dot-amber' : 'dot-green');
+
+    const ctx = getTemporalContext(h);
+    document.getElementById('context-msg').textContent = ctx.msg;
+    document.getElementById('context-dot').className = 'dot ' + ctx.dot;
+
+    // consolidação automática na janela
+    if(inWindow && saturation > 30) {
+      saturation = Math.max(5, saturation - 0.5);
+      document.getElementById('sat-val').textContent = Math.round(saturation)+'%';
+      document.getElementById('sat-bar').style.width = Math.round(saturation)+'%';
+    }
   }
 
   function classifyMLP(text){
@@ -148,14 +190,30 @@
     bar.className = 'bar-fill ' + (pct < 60 ? 'bar-ok' : pct < 85 ? 'bar-warn' : 'bar-danger');
     document.getElementById('sat-status').textContent =
       pct < 60 ? 'contexto limpo' : pct < 85 ? 'atenção: contexto alto' : 'bypass ativado!';
+
+    const h = new Date().getHours();
+    const inWindow = h >= 3 && h < 5;
+
     if(pct >= 85){
       bypassCount++;
       saturation = 15;
       document.getElementById('bypass-badge-area').innerHTML =
         '<div class="bypass-badge">⚡ bypass invisível #'+bypassCount+' ativado — AEIL</div>';
       document.getElementById('bypass-info').textContent = 'contexto comprimido (AEIL)';
-      addAIMsg('🔄 [Bypass Invisível ativado] Contexto comprimido internamente via AEIL. Continuando sem perda de informação relevante.');
+
+      if(inWindow) {
+        addSystemMsg('🌙 [Janela de Consolidação] Bypass combinado com consolidação noturna. MLP atualizado silenciosamente.');
+      } else {
+        addAIMsg('🔄 [Bypass Invisível ativado] Contexto comprimido via AEIL. Continuando sem perda de informação relevante.');
+      }
     }
+  }
+
+  function addSystemMsg(text){
+    const t = getTs(new Date());
+    const area = document.getElementById('chat-area');
+    area.innerHTML += '<div><div class="msg msg-system">'+text+'</div><div class="msg-ts">'+t+'</div></div>';
+    area.scrollTop = area.scrollHeight;
   }
 
   function addAIMsg(text){
@@ -171,10 +229,19 @@
     if(!text) return;
     input.value = '';
 
-    const t = getTs(new Date());
+    const now = new Date();
+    const t = getTs(now);
     const area = document.getElementById('chat-area');
     area.innerHTML += '<div style="display:flex;flex-direction:column;align-items:flex-end"><div class="msg msg-user">'+text+'</div><div class="msg-ts" style="text-align:right">'+t+'</div></div>';
     area.scrollTop = area.scrollHeight;
+
+    // detectar gap
+    if(lastMsgTime) {
+      const diffMin = (now - lastMsgTime) / 60000;
+      const gapMsg = getGapMsg(diffMin);
+      if(gapMsg) setTimeout(function(){ addSystemMsg(gapMsg); }, 200);
+    }
+    lastMsgTime = now;
 
     msgCount++;
     document.getElementById('msg-count').textContent = msgCount;
@@ -191,11 +258,13 @@
     updateSaturation(12 + Math.random()*8);
 
     setTimeout(function(){
+      const h = now.getHours();
+      const ctx = getTemporalContext(h);
       const responses = {
-        Pessoa: 'Entendido. Informação categorizada como Pessoa → armazenada no MLP. Timestamp: '+t+'.',
-        Projeto: 'Contexto de projeto registrado. Timestamp: '+t+'. Associado ao escopo ativo.',
-        Ferramenta: 'Ferramenta identificada e indexada. Timestamp: '+t+'.',
-        Ruído: 'Mensagem recebida. Classificada como Ruído — baixa prioridade no MLP. Timestamp: '+t+'.'
+        Pessoa: 'Informação categorizada como Pessoa → MLP. Timestamp: '+t+'. '+ctx.msg,
+        Projeto: 'Contexto de projeto registrado. Timestamp: '+t+'. '+ctx.msg,
+        Ferramenta: 'Ferramenta indexada. Timestamp: '+t+'. '+ctx.msg,
+        Ruído: 'Classificado como Ruído — baixa prioridade. Timestamp: '+t+'.'
       };
       addAIMsg(responses[cat]);
     }, 350);
@@ -204,6 +273,15 @@
   document.getElementById('chat-input').addEventListener('keydown', function(e){
     if(e.key === 'Enter') sendMsg();
   });
+
+  // mensagem de boas vindas baseada no horário
+  window.onload = function() {
+    const h = new Date().getHours();
+    const ctx = getTemporalContext(h);
+    setTimeout(function(){
+      addSystemMsg('🟢 Sistema iniciado. ' + ctx.msg);
+    }, 500);
+  };
 
   updateClock();
   setInterval(updateClock, 1000);
